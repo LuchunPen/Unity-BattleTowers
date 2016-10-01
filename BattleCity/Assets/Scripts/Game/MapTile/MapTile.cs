@@ -17,8 +17,8 @@ public abstract class MapObject: MonoBehaviour
     }
 
     [SerializeField]
-    private Vector2 _mapSize;
-    public Vector2 MapSize {
+    protected MapSize _mapSize;
+    public MapSize MapSize {
         get { return _mapSize; }
     }
 

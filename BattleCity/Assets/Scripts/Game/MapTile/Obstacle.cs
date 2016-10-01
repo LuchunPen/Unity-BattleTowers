@@ -20,10 +20,9 @@ public class Obstacle : MapObject
     public override Rect Rect
     {
         get {
-            float xOff = this.transform.position.x - (int)MapSize.x / 2;
-            float yOff = this.transform.position.y - (int)MapSize.y / 2;
-
-            return new Rect(xOff, yOff, MapSize.x, MapSize.y);
+            float xOff = this.transform.position.x - (int)MapSize / 2;
+            float yOff = this.transform.position.y - (int)MapSize / 2;
+            return new Rect(xOff, yOff, (int)MapSize, (int)MapSize);
         }
     }
 }

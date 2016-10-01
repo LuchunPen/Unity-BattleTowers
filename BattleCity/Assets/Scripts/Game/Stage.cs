@@ -12,11 +12,6 @@ public class Stage: MonoBehaviour
 {
     //public static readonly Uid64 UNIQ = "EE15B130F388F302";
 
-    private static Stage _instance;
-    public static Stage Instance { get { return _instance; } }
-
-    private int _nextMapObjectID = 1;
-
     [SerializeField]
     private StageMap _map;
     public StageMap Map
@@ -32,14 +27,6 @@ public class Stage: MonoBehaviour
 
     [SerializeField]
     private Transform FloorObject;
-
-    void Awake()
-    {
-        if (_instance == null) {
-            _instance = this;
-        }
-        else { Destroy(this); }
-    }
 
 	void Start () 
 	{
@@ -76,6 +63,7 @@ public class Stage: MonoBehaviour
     {
         if (mObj == null) { return false; }
         Rect r = mObj.Rect;
+
         int sx = Mathf.FloorToInt(r.xMin);
         int sy = Mathf.FloorToInt(r.yMin);
         int ex = (int)(sx + r.width);
@@ -102,6 +90,7 @@ public class Stage: MonoBehaviour
     {
         if (mObj == null) { return; }
         Rect r = mObj.Rect;
+
         for (int x = (int)r.xMin; x <= r.xMax; x++) {
             for (int y = (int)r.yMin; y <= r.yMax; y++) {
                 MapCell mc = Map[x, y];
@@ -117,7 +106,7 @@ public class Stage: MonoBehaviour
         else { Destroy(mObj.gameObject); }
     }
 
-    public MapObject[] MapRectCollisionDetect(Rect r, Dir4 direction, ObstacleType collisionMask)
+    public bool InMapBound(Rect r, Dir4 direction)
     {
         int minX, minY, maxX, maxY;
         if (direction == Dir4.Left) {
@@ -126,6 +115,7 @@ public class Stage: MonoBehaviour
             minY = Mathf.CeilToInt(r.yMin);
             maxY = Mathf.FloorToInt(r.yMax);
             if (minX == maxX) { maxX++; }
+            if (minY == maxY) { maxY++; }
         }
         else if (direction == Dir4.Right) {
             minX = Mathf.CeilToInt(r.xMin);
@@ -133,6 +123,7 @@ public class Stage: MonoBehaviour
             minY = Mathf.CeilToInt(r.yMin);
             maxY = Mathf.FloorToInt(r.yMax);
             if (minX == maxX) { minX--; }
+            if (minY == maxY) { maxY++; }
         }
 
         else if (direction == Dir4.Up) {
@@ -141,6 +132,7 @@ public class Stage: MonoBehaviour
             minY = Mathf.CeilToInt(r.yMin);
             maxY = Mathf.CeilToInt(r.yMax);
             if (minY == maxY) { minY--; }
+            if (minX == maxX) { maxX++; }
         }
         else {
             minX = Mathf.CeilToInt(r.xMin);
@@ -148,49 +140,18 @@ public class Stage: MonoBehaviour
             minY = Mathf.FloorToInt(r.yMin);
             maxY = Mathf.FloorToInt(r.yMax);
             if (minY == maxY) { maxY++; }
+            if (minX == maxX) { maxX++; }
         }
 
         for (int x = minX; x < maxX; x++) {
             for (int y = minY; y < maxY; y++) {
                 if (!IsMapBounded(x, y)) {
-                    return new MapObject[0];
+                    return false;
                 }
             }
         }
 
-        //Other map object collision
-        if (direction == Dir4.Up) {
-            r.xMin += 0.2f; r.yMin += 0.5f; r.xMax -= 0.2f; r.yMax -= 0.1f;
-        }
-        if (direction == Dir4.Down) {
-            r.xMin += 0.2f; r.yMin += 0.1f; r.xMax -= 0.2f; r.yMax -= 0.5f;
-        }
-        if (direction == Dir4.Left) {
-            r.xMin += 0.1f; r.yMin += 0.2f; r.xMax -= 0.5f; r.yMax -= 0.2f;
-        }
-        if (direction == Dir4.Right) {
-            r.xMin += 0.5f; r.yMin += 0.2f; r.xMax -= 0.1f; r.yMax -= 0.2f;
-        }
-
-        List<MapObject> mObjs = new List<MapObject>();
-
-        for (int x = minX - 1; x <= maxX; x++) {
-            for (int y = minY - 1; y <= maxY; y++) {
-
-                MapCell mc = Map[x, y];
-                if (mc != null) {
-                    MapObject mo = mc.RegisterObject;
-                    if (mo != null && (mo.Obstacle & collisionMask) != 0) {
-                        if (mo.Rect.Overlaps(r)) {
-                            mObjs.Add(mo);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (mObjs.Count == 0) { return null; }
-        return mObjs.ToArray();
+        return true;
     }
 
     public void ClearMap()

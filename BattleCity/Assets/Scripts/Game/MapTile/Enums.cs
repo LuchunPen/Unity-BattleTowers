@@ -20,3 +20,9 @@ public enum ObstacleType
     Flying = 2,
     GroundAndFlying = Ground | Flying,
 }
+
+public enum MapSize
+{
+    x1 = 1,
+    x2 = 2,
+}

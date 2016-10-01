@@ -28,6 +28,7 @@ public class StageEditor : Editor
             guiStyle.imagePosition = ImagePosition.ImageAbove;
             guiStyle.fixedWidth = ButtonWidth;
             guiStyle.fixedHeight = ButtonHeight;
+            guiStyle.fontSize = 8;
             return guiStyle;
         }
     }
@@ -37,7 +38,8 @@ public class StageEditor : Editor
     private Vector2 _mapSize;
     private bool _showNewMap;
 
-    private MapObject _activeTile;
+    private static MapObject _activeTile;
+    private static Vector2 _cursorPos;
 
     private void OnEnable()
     {
@@ -62,10 +64,10 @@ public class StageEditor : Editor
     void OnSceneGUI()
     {
         if (_target == null) { return; }
-
+        if (_activeTile != null) {
+            Tools.current = Tool.View;
+        }
         EditMap();
-
-        //EditorUtility.SetDirty(_target);
         SceneView.RepaintAll();
     }
 
@@ -81,22 +83,29 @@ public class StageEditor : Editor
 
         _mapName = EditorGUILayout.TextField("Map name: ", _mapName);
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Map size", GUILayout.Width(115));
+        EditorGUILayout.LabelField("Map size (x2 sections)", GUILayout.Width(130));
         _mapSize = EditorGUILayout.Vector2Field("",new Vector2(
-           Mathf.FloorToInt(Mathf.Clamp(_mapSize.x, 1, 50)),
-            Mathf.FloorToInt(Mathf.Clamp(_mapSize.y, 1, 50))), GUILayout.MaxWidth(100)
+           Mathf.FloorToInt(Mathf.Clamp(_mapSize.x, 8, 20)),
+            Mathf.FloorToInt(Mathf.Clamp(_mapSize.y, 8, 20))), GUILayout.MaxWidth(100)
             );
         EditorGUILayout.EndHorizontal();
-
+        EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Create new")) {
             if (_target.Map != null) {
                 _target.ClearMap();
             }
-            StageMap map = new StageMap((int)_mapSize.x, (int)_mapSize.y);
+            StageMap map = new StageMap((int)_mapSize.x * 2, (int)_mapSize.y * 2);
             map.MapName = _mapName;
             _target.Map = map;
         }
-        EditorGUILayout.EndFadeGroup();
+        if (GUILayout.Button("Load txt")) {
+
+        }
+        if (GUILayout.Button("Save txt")) {
+
+        }
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
     }
 
     private void DrawTiles()
@@ -122,7 +131,6 @@ public class StageEditor : Editor
         if (Tiles == null) { return; }
         EditorGUILayout.HelpBox("[Q] if tile active - [add tile], else [remove tile]", MessageType.Info);
         ScrollPosition = EditorGUILayout.BeginScrollView(ScrollPosition);
-        int tilesCount = Tiles.Count;
         int tileIndex = -1;
         tileIndex = GUILayout.SelectionGrid(tileIndex, GetGUIContentsFromTile(), TileRowLenght, ButtonGUIStyle);
         if (tileIndex != -1) {
@@ -138,10 +146,12 @@ public class StageEditor : Editor
         List<GUIContent> guiContents = new List<GUIContent>();
         int tilesCount = Tiles.Count;
         for (int i = 0; i < tilesCount; i++) {
-            Texture2D tex = Previews[Tiles[i]];
-            string name = Tiles[i].name;
-            GUIContent cont = new GUIContent(name, tex);
-            guiContents.Add(cont);
+            Texture2D tex = null;  Previews.TryGetValue(Tiles[i], out tex);
+            if (tex != null) {
+                string name = Tiles[i].name;
+                GUIContent cont = new GUIContent(name, tex);
+                guiContents.Add(cont);
+            }
         }
 
         return guiContents.ToArray();
@@ -170,20 +180,22 @@ public class StageEditor : Editor
     private void EditMap()
     {
         Ray mapRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-        int tpX = Mathf.FloorToInt(mapRay.origin.x);
-        int tpY = Mathf.FloorToInt(mapRay.origin.y);
-        Event curr = Event.current;
-
-
+        int tpX = Mathf.FloorToInt(mapRay.origin.x); int tpY = Mathf.FloorToInt(mapRay.origin.y);
         if (_activeTile != null) {
-            float offsetX = _activeTile.MapSize.x % 2 == 0 ? 1f : 0;
-            float offsetY = _activeTile.MapSize.y % 2 == 0 ? 1f : 0;
-            _activeTile.transform.position = new Vector3(tpX + offsetX, tpY + offsetY, 0);
+            tpX = Mathf.FloorToInt(mapRay.origin.x / (int)_activeTile.MapSize) * (int)_activeTile.MapSize;
+            tpY = Mathf.FloorToInt(mapRay.origin.y / (int)_activeTile.MapSize) * (int)_activeTile.MapSize;
+        }
+        _cursorPos = new Vector2(tpX, tpY);
 
-            Vector2 size = _activeTile.MapSize;
+        Event curr = Event.current;
+        if (_activeTile != null) {
+            float offset = (int)_activeTile.MapSize % 2 == 0 ? 1f : 0;
+            _activeTile.transform.position = new Vector3(tpX + offset, tpY + offset, 0);
+
+            int size = (int)_activeTile.MapSize;
             bool inMapBound = true;
-            for (int x = 0; x < size.x; x++) {
-                for (int y = 0; y < size.y; y++) {
+            for (int x = 0; x < size; x++) {
+                for (int y = 0; y < size; y++) {
                     Vector3 tPos = new Vector3(tpX + x, tpY + y, 0);
                     if (!_target.IsMapBounded(tPos)) {
                         inMapBound = false;
@@ -242,9 +254,17 @@ public class StageEditor : Editor
         if (targetObj == null || targetObj.Map == null || targetObj.Map.SizeX == 0 || targetObj.Map.SizeY == 0) { return; }
         Gizmos.matrix = targetObj.transform.localToWorldMatrix;
 
-        DrawMapFrame(targetObj.Map.SizeX, targetObj.Map.SizeY, 1f);
-        DrawMapGrid(targetObj.Map.SizeX, targetObj.Map.SizeY, 1f);
-        DrawGizmoBrush();
+        
+        if (_activeTile == null || _activeTile.MapSize == MapSize.x1) {
+            DrawMapFrame(targetObj.Map.SizeX, targetObj.Map.SizeY, 1f);
+            DrawMapGrid(targetObj.Map.SizeX, targetObj.Map.SizeY, 1f);
+            DrawGizmoBrush(1);
+        }
+        else {
+            DrawMapFrame(targetObj.Map.SizeX / 2, targetObj.Map.SizeY / 2, 2f);
+            DrawMapGrid(targetObj.Map.SizeX / 2, targetObj.Map.SizeY / 2, 2f);
+            DrawGizmoBrush(2);
+        }
     }
 
     private static void DrawMapFrame(int x, int y, float size)
@@ -267,14 +287,11 @@ public class StageEditor : Editor
         }
     }
 
-    private static void DrawGizmoBrush()
+    private static void DrawGizmoBrush(int snapSize)
     {
-        Ray mapRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-        int tpX = Mathf.FloorToInt(mapRay.origin.x);
-        int tpY = Mathf.FloorToInt(mapRay.origin.y);
-
         Gizmos.color = Color.green;
-        Gizmos.DrawCube(new Vector3(tpX + 0.5f, tpY + 0.5f, 0.5f), new Vector3(0.2f, 0.2f, 0.2f));
+        Gizmos.DrawCube(new Vector3(_cursorPos.x + (0.5f * snapSize), _cursorPos.y + (0.5f * snapSize), 0.5f), 
+            new Vector3(0.2f, 0.2f, 0.2f));
     }
 
     public static List<T> GetAssetsWithScript<T>(string path) where T : MonoBehaviour

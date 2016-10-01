@@ -30,45 +30,44 @@ public class Bullet: MapObject
     {
         get {
             Vector2 pos = this.transform.position;
-            return new Rect(pos.x - 0.5f, pos.y - 0.5f, 
-                MapSize.x, MapSize.y);
+            return new Rect(pos.x - 0.5f, pos.y - 0.5f, (int)MapSize, (int)MapSize);
         }
     }
-
-    void Start () 
-	{
-	    
-	}
 	
 	void Update ()
 	{
-        BulletFly();
+        //BulletFly();
 	}
 
+    /*
     private void BulletFly()
     {
         Vector3 curPos = this.transform.position;
         Vector3 direction = MapObjectUtils.GetDirection2D(Direction);
         Vector3 nextPos = Vector3.MoveTowards(curPos, curPos + direction, _moveSpeed * Time.deltaTime);
 
-        MapObject[] mObjs = Stage.Instance.MapRectCollisionDetect(this.Rect, this.Direction, ObstacleType.Flying);
-        if (mObjs == null) {
-            this.transform.position = nextPos;
-            if (!Stage.Instance.IsMapBounded(nextPos)) { OnDestroy(); }
-        }
-        else if (mObjs.Length == 0) { OnDestroy(); }
-        else {
-            for (int i = 0; i < mObjs.Length;i++) {
-                Stage.Instance.UnregisterMapObject(mObjs[i]);
+        if (_lastCollision != null) {
+            if ((_lastCollision.Obstacle & ObstacleType.Flying) != 0) {
+                BTGame.Current.Stage.UnregisterMapObject(_lastCollision);
+                OnDestroy();
             }
+            _lastCollision = null;
+        }
+
+        if (!BTGame.Current.Stage.InMapBound(this.Rect, this.Direction)) {
             OnDestroy();
         }
+        this.transform.position = nextPos;
     }
-
-
 
     private void OnDestroy()
     {
         Destroy(this.gameObject);
     }
+
+    private void OnTriggerEnter2D(Collider2D collider)
+    {
+        _lastCollision = collider.GetComponent<MapObject>();
+    }
+    */
 }
