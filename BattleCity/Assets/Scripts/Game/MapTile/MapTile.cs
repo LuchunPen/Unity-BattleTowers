@@ -29,15 +29,7 @@ public abstract class MapObject: MonoBehaviour
         get { return _obstacle; }
     }
 
-    public Rect Rect
-    {
-        get {
-            float xOff = this.transform.position.x - (int)MapSize.x / 2;
-            float yOff = this.transform.position.y - (int)MapSize.y / 2;
-
-            return new Rect(xOff, yOff, MapSize.x, MapSize.y);
-        }
-    }
+    public abstract Rect Rect { get; }
 
     public abstract Dir4 Direction { get; set; }
 

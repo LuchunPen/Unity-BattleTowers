@@ -35,6 +35,7 @@ public class StageEditor : Editor
     private Stage _target;
     private string _mapName;
     private Vector2 _mapSize;
+    private bool _showNewMap;
 
     private MapObject _activeTile;
 
@@ -54,6 +55,7 @@ public class StageEditor : Editor
     {
         if (_target == null) { _target = (Stage)target; }
         DrawStageMapInfo();
+        EditorGUILayout.Space();
         DrawTiles();
     }
 
@@ -72,28 +74,29 @@ public class StageEditor : Editor
         if (_target.Map == null || _target.Map.SizeX == 0 || _target.Map.SizeY == 0) {
             EditorGUILayout.BeginVertical();
             EditorGUILayout.HelpBox("Map is not created", MessageType.Info);
-            _mapName = EditorGUILayout.TextField("Map name: ", _mapName);
-            _mapSize = EditorGUILayout.Vector2Field("Map size", new Vector2(
-               Mathf.FloorToInt(Mathf.Clamp(_mapSize.x, 1, 50)), 
-                Mathf.FloorToInt(Mathf.Clamp(_mapSize.y, 1, 50)))
-                );
-
-            if (GUILayout.Button("Create new")) {
-                StageMap map = new StageMap((int)_mapSize.x, (int)_mapSize.y);
-                map.MapName = _mapName;
-                _target.Map = map;
-            }
             EditorGUILayout.EndVertical();
         }
         EditorGUILayout.BeginVertical("box");
-        EditorGUILayout.LabelField(_target.Map.MapName + " " + (_target.Map.SizeX / 2) + ", " + (_target.Map.SizeY / 2) + " sections");
+        EditorGUILayout.LabelField(_target.Map.MapName + " " + (_target.Map.SizeX) + ", " + (_target.Map.SizeY) + " cells");
+
+        _mapName = EditorGUILayout.TextField("Map name: ", _mapName);
         EditorGUILayout.BeginHorizontal();
-        _mapName = EditorGUILayout.TextField("New map name: ", _mapName);
-        if (GUILayout.Button("Rename")) {
-            _target.Map.MapName = _mapName;
-        }
+        EditorGUILayout.LabelField("Map size", GUILayout.Width(115));
+        _mapSize = EditorGUILayout.Vector2Field("",new Vector2(
+           Mathf.FloorToInt(Mathf.Clamp(_mapSize.x, 1, 50)),
+            Mathf.FloorToInt(Mathf.Clamp(_mapSize.y, 1, 50))), GUILayout.MaxWidth(100)
+            );
         EditorGUILayout.EndHorizontal();
-        EditorGUILayout.EndVertical();
+
+        if (GUILayout.Button("Create new")) {
+            if (_target.Map != null) {
+                _target.ClearMap();
+            }
+            StageMap map = new StageMap((int)_mapSize.x, (int)_mapSize.y);
+            map.MapName = _mapName;
+            _target.Map = map;
+        }
+        EditorGUILayout.EndFadeGroup();
     }
 
     private void DrawTiles()
@@ -117,7 +120,7 @@ public class StageEditor : Editor
     private void DrawScrollList()
     {
         if (Tiles == null) { return; }
-        EditorGUILayout.HelpBox("Q to add, E to remove", MessageType.Info);
+        EditorGUILayout.HelpBox("[Q] if tile active - [add tile], else [remove tile]", MessageType.Info);
         ScrollPosition = EditorGUILayout.BeginScrollView(ScrollPosition);
         int tilesCount = Tiles.Count;
         int tileIndex = -1;
@@ -178,31 +181,44 @@ public class StageEditor : Editor
             _activeTile.transform.position = new Vector3(tpX + offsetX, tpY + offsetY, 0);
 
             Vector2 size = _activeTile.MapSize;
-            bool canPlace = true;
+            bool inMapBound = true;
             for (int x = 0; x < size.x; x++) {
                 for (int y = 0; y < size.y; y++) {
                     Vector3 tPos = new Vector3(tpX + x, tpY + y, 0);
                     if (!_target.IsMapBounded(tPos)) {
-                        canPlace = false;
+                        inMapBound = false;
                         continue;
                     }
                 }
             }
 
-            if (!canPlace) {
+            if (!inMapBound) {
                 _activeTile.gameObject.SetActive(false);
             }
             else {
                 _activeTile.gameObject.SetActive(true);
             }
 
-            if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q && canPlace) {
-                bool reg = _target.RegisterMapObject(_activeTile);
+            if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q && inMapBound) {
+                bool reg = _target.CanPlaceMapObject(_activeTile);
                 if (reg) {
                     _activeTile.transform.SetParent(_target.transform);
                     MapObject newTile = Instantiate(_activeTile, _activeTile.transform.position, Quaternion.identity) as MapObject;
                     newTile.gameObject.name = _activeTile.name;
                     _activeTile = newTile;
+                }
+            }
+            else if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.R) {
+                _activeTile.Direction++;
+            }
+        }
+        else {
+            if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q) {
+                if (_target.IsMapBounded(tpX, tpY)) {
+                    MapObject mo = _target.Map[tpX, tpY].RegisterObject;
+                    if (mo!= null) {
+                        _target.UnregisterMapObject(mo);
+                    }
                 }
             }
         }

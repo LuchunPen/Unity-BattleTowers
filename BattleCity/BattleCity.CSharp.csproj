@@ -63,11 +63,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Game\MapCell.cs" />
+    <Compile Include="Assets\Scripts\Game\MapTile\Bullet.cs" />
     <Compile Include="Assets\Scripts\Game\MapTile\Enums.cs" />
     <Compile Include="Assets\Scripts\Game\MapTile\MapObjectUtils.cs" />
     <Compile Include="Assets\Scripts\Game\MapTile\MapTile.cs" />
     <Compile Include="Assets\Scripts\Game\MapTile\Obstacle.cs" />
     <Compile Include="Assets\Scripts\Game\MapTile\Tank.cs" />
+    <Compile Include="Assets\Scripts\Game\MapTile\Tower.cs" />
     <Compile Include="Assets\Scripts\Game\Stage.cs" />
     <Compile Include="Assets\Scripts\Game\StageMap.cs" />
   </ItemGroup>

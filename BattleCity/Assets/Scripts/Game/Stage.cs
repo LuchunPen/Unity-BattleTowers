@@ -4,6 +4,7 @@ Date: 30/09/2016 23:37
 */
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -71,10 +72,10 @@ public class Stage: MonoBehaviour
         return _map.GetMapIndex(px, py) != -1;
     }
 
-    public bool RegisterMapObject(MapObject mapObj)
+    public bool CanPlaceMapObject(MapObject mObj)
     {
-        if (mapObj == null) { return false; }
-        Rect r = mapObj.Rect;
+        if (mObj == null) { return false; }
+        Rect r = mObj.Rect;
         int sx = Mathf.FloorToInt(r.xMin);
         int sy = Mathf.FloorToInt(r.yMin);
         int ex = (int)(sx + r.width);
@@ -82,72 +83,96 @@ public class Stage: MonoBehaviour
 
         for (int x = sx; x < ex; x++) {
             for (int y = sy; y < ey; y++) {
-                if (!IsMapBounded(x, y)) return false;
-                if (_map[x, y].RegisterObject != null) { return false; }
+                if (!IsMapBounded(x, y)) { return false; }
+                if (_map[x, y].RegisterObject != null) {
+                    return false;
+                }
             }
         }
-
+        
         for (int x = sx; x < ex; x++) {
             for (int y = sy; y < ey; y++) {
-                _map[x, y].RegisterObject = mapObj;
+                _map[x, y].RegisterObject = mObj;
             }
         }
         return true;
     }
 
-    public bool MapRectCollisionDetect(MapObject mObj, ObstacleType collisionMask)
+    public void UnregisterMapObject(MapObject mObj)
     {
-        if (mObj == null) { return false; }
+        if (mObj == null) { return; }
         Rect r = mObj.Rect;
+        for (int x = (int)r.xMin; x <= r.xMax; x++) {
+            for (int y = (int)r.yMin; y <= r.yMax; y++) {
+                MapCell mc = Map[x, y];
+                if (mc != null && mc.RegisterObject == mObj) {
+                    mc.RegisterObject = null;
+                }
+            }
+        }
 
+        if (!Application.isPlaying) {
+            DestroyImmediate(mObj.gameObject);
+        }
+        else { Destroy(mObj.gameObject); }
+    }
+
+    public MapObject[] MapRectCollisionDetect(Rect r, Dir4 direction, ObstacleType collisionMask)
+    {
         int minX, minY, maxX, maxY;
-        if (mObj.Direction == Dir4.Left) {
+        if (direction == Dir4.Left) {
             minX = Mathf.FloorToInt(r.xMin);
             maxX = Mathf.FloorToInt(r.xMax);
             minY = Mathf.CeilToInt(r.yMin);
             maxY = Mathf.FloorToInt(r.yMax);
+            if (minX == maxX) { maxX++; }
         }
-        else if (mObj.Direction == Dir4.Right) {
+        else if (direction == Dir4.Right) {
             minX = Mathf.CeilToInt(r.xMin);
             maxX = Mathf.CeilToInt(r.xMax);
             minY = Mathf.CeilToInt(r.yMin);
             maxY = Mathf.FloorToInt(r.yMax);
+            if (minX == maxX) { minX--; }
         }
 
-        else if (mObj.Direction == Dir4.Up) {
+        else if (direction == Dir4.Up) {
             minX = Mathf.CeilToInt(r.xMin);
             maxX = Mathf.FloorToInt(r.xMax);
             minY = Mathf.CeilToInt(r.yMin);
             maxY = Mathf.CeilToInt(r.yMax);
+            if (minY == maxY) { minY--; }
         }
         else {
             minX = Mathf.CeilToInt(r.xMin);
             maxX = Mathf.FloorToInt(r.xMax);
             minY = Mathf.FloorToInt(r.yMin);
             maxY = Mathf.FloorToInt(r.yMax);
+            if (minY == maxY) { maxY++; }
         }
 
         for (int x = minX; x < maxX; x++) {
             for (int y = minY; y < maxY; y++) {
                 if (!IsMapBounded(x, y)) {
-                    return true;
+                    return new MapObject[0];
                 }
             }
         }
 
         //Other map object collision
-        if (mObj.Direction == Dir4.Up) {
+        if (direction == Dir4.Up) {
             r.xMin += 0.2f; r.yMin += 0.5f; r.xMax -= 0.2f; r.yMax -= 0.1f;
         }
-        if (mObj.Direction == Dir4.Down) {
+        if (direction == Dir4.Down) {
             r.xMin += 0.2f; r.yMin += 0.1f; r.xMax -= 0.2f; r.yMax -= 0.5f;
         }
-        if (mObj.Direction == Dir4.Left) {
+        if (direction == Dir4.Left) {
             r.xMin += 0.1f; r.yMin += 0.2f; r.xMax -= 0.5f; r.yMax -= 0.2f;
         }
-        if (mObj.Direction == Dir4.Right) {
+        if (direction == Dir4.Right) {
             r.xMin += 0.5f; r.yMin += 0.2f; r.xMax -= 0.1f; r.yMax -= 0.2f;
         }
+
+        List<MapObject> mObjs = new List<MapObject>();
 
         for (int x = minX - 1; x <= maxX; x++) {
             for (int y = minY - 1; y <= maxY; y++) {
@@ -157,14 +182,15 @@ public class Stage: MonoBehaviour
                     MapObject mo = mc.RegisterObject;
                     if (mo != null && (mo.Obstacle & collisionMask) != 0) {
                         if (mo.Rect.Overlaps(r)) {
-                            return true;
+                            mObjs.Add(mo);
                         }
                     }
                 }
             }
         }
 
-        return false;
+        if (mObjs.Count == 0) { return null; }
+        return mObjs.ToArray();
     }
 
     public void ClearMap()
