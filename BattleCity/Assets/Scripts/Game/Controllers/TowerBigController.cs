@@ -28,17 +28,24 @@ public class TowerBigController: MonoBehaviour
     void Start () 
 	{
         GameObject targ = GameObject.FindGameObjectWithTag("Player");
-        _bulletSpawner = this.transform.FindChild("BulletSpawn");
         if (targ != null) {
             _playerTarget = targ.transform;
         }
-
+        _bulletSpawner = this.transform.FindChild("BulletSpawn");
         _fireBehaviour = this.GetComponent<BehFire>();
+        IDamageable dam = this.GetComponent<IDamageable>();
+        if (dam != null) { dam.NoHealthEvent += NoHealthEventHandler; }
 	}
 	
 	void Update ()
 	{
         Fire();
+        if (_playerTarget == null) {
+            GameObject targ = GameObject.FindGameObjectWithTag("Player");
+            if (targ != null) {
+                _playerTarget = targ.transform;
+            }
+        }
 	}
 
     private void Fire()
@@ -68,5 +75,17 @@ public class TowerBigController: MonoBehaviour
         float dist = Vector3.Distance(_playerTarget.position, this.transform.position);
         if (dist < 10) { return true; }
         return false;
+    }
+
+    private void NoHealthEventHandler(object sender, EventArgs arg)
+    {
+        IDamageable dam = this.GetComponent<IDamageable>();
+        if (dam != null) {
+            dam.NoHealthEvent -= NoHealthEventHandler;
+            BTGame.Current.Stage.UnregisterMapObject(_mapObj);
+        }
+        if (this.gameObject != null) {
+            Destroy(this.gameObject);
+        }
     }
 }

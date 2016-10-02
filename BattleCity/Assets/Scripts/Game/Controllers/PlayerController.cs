@@ -40,6 +40,8 @@ public class PlayerController: MonoBehaviour, IModifiable<BehMove>, IModifiable<
         _moveBehaviour = _activeLevelObject.GetComponent<BehMove>();
         _fireBehaviour = _activeLevelObject.GetComponent<BehFire>();
         _bulletSpawner = _activeLevelObject.transform.FindChild("BulletSpawn");
+        IDamageable dam = _activeLevelObject.GetComponent<IDamageable>();
+        if (dam != null) { dam.NoHealthEvent += NoHealthEventHandler; }
 
     }
 
@@ -121,6 +123,8 @@ public class PlayerController: MonoBehaviour, IModifiable<BehMove>, IModifiable<
         if (oldLevel == _level) { return; }
         else {
             Dir4 dir = _activeLevelObject.Direction;
+            IDamageable dam = _activeLevelObject.GetComponent<IDamageable>();
+            if (dam != null) { dam.NoHealthEvent -= NoHealthEventHandler; }
             _activeLevelObject.gameObject.SetActive(false);
             _activeLevelObject = _levelObjects[_level];
             _activeLevelObject.gameObject.SetActive(true);
@@ -128,6 +132,20 @@ public class PlayerController: MonoBehaviour, IModifiable<BehMove>, IModifiable<
             _fireBehaviour = _activeLevelObject.GetComponent<BehFire>();
             _bulletSpawner = _activeLevelObject.transform.FindChild("BulletSpawn");
             _activeLevelObject.Direction = dir;
+            dam = _activeLevelObject.GetComponent<IDamageable>();
+            if (dam != null) { dam.NoHealthEvent += NoHealthEventHandler; }
+        }
+    }
+
+    private void NoHealthEventHandler(object sender, EventArgs arg)
+    {
+        IDamageable dam = this.GetComponent<IDamageable>();
+        if (dam != null) {
+            dam.NoHealthEvent -= NoHealthEventHandler;
+            BTGame.Current.Stage.UnregisterMapObject(_activeLevelObject);
+        }
+        if (this.gameObject != null) {
+            Destroy(this.gameObject);
         }
     }
 }

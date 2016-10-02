@@ -6,7 +6,7 @@ Date: 01/10/2016 23:09
 using System;
 using UnityEngine;
 
-public class BulletController: MonoBehaviour 
+public class BulletController : MonoBehaviour
 {
     //public static readonly Uid64 UNIQ = "DE3E8932773DD602";
 
@@ -14,7 +14,14 @@ public class BulletController: MonoBehaviour
     private Damage _damage;
     public Damage Damage
     {
-       get { return _damage; }
+        get { return _damage; }
+    }
+
+    [SerializeField]
+    private float _damageRadius = 0.2f;
+    public float DamageRadius
+    {
+        get { return _damageRadius; }
     }
 
     private MapObject _mapObj;
@@ -35,12 +42,14 @@ public class BulletController: MonoBehaviour
     {
         _mapObj = this.GetComponent<MapObject>();
         _moveBehaviour = this.GetComponent<BehMove>();
+        IDamageable dam = this.GetComponent<IDamageable>();
+        if (dam != null) { dam.NoHealthEvent += NoHealthEventHandler; }
     }
 
-	void Update ()
-	{
+    void Update()
+    {
         if (_moveBehaviour != null) {
-            ObstacleType obst =  _moveBehaviour.Move(this.transform, this.MapObj);
+            ObstacleType obst = _moveBehaviour.Move(this.transform, this.MapObj);
             if (obst != ObstacleType.None) {
                 SetDamage();
             }
@@ -54,21 +63,33 @@ public class BulletController: MonoBehaviour
 
     private void SetDamage()
     {
-        Collider2D[] cols = Physics2D.OverlapCircleAll(this.transform.position, 0.2f);
+        Collider2D[] cols = Physics2D.OverlapCircleAll(this.transform.position, DamageRadius);
         if (cols != null) {
             for (int i = 0; i < cols.Length; i++) {
                 if (cols[i].gameObject == _owner) continue;
-
-                MapObject mo = cols[i].GetComponent<MapObject>();
-                if (mo != null) {
-                    BTGame.Current.Stage.UnregisterMapObject(mo);
+                IDamageable dam = cols[i].GetComponent<IDamageable>();
+                if (dam != null) {
+                    dam.SetDamage(_damage);
                 }
             }
+            OnDestroy();
         }
     }
 
     private void OnDestroy()
     {
         Destroy(this.gameObject);
+    }
+
+    private void NoHealthEventHandler(object sender, EventArgs arg)
+    {
+        IDamageable dam = this.GetComponent<IDamageable>();
+        if (dam != null) {
+            dam.NoHealthEvent -= NoHealthEventHandler;
+            BTGame.Current.Stage.UnregisterMapObject(_mapObj);
+        }
+        if (this.gameObject != null) {
+            Destroy(this.gameObject);
+        }
     }
 }

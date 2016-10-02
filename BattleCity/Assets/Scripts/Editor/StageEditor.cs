@@ -98,12 +98,6 @@ public class StageEditor : Editor
             map.MapName = _mapName;
             _target.Map = map;
         }
-        if (GUILayout.Button("Load txt")) {
-
-        }
-        if (GUILayout.Button("Save txt")) {
-
-        }
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
     }

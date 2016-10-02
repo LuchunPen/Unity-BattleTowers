@@ -27,11 +27,9 @@ public class TowerMiniController: MonoBehaviour
     {
         _mapObj = this.GetComponent<MapObject>();
         _fireBehaviour = this.GetComponent<BehFire>();
-    }
-
-    void Start()
-    {
         _bulletSpawner = this.transform.FindChild("BulletSpawn");
+        IDamageable dam = this.GetComponent<IDamageable>();
+        if (dam != null) { dam.NoHealthEvent += NoHealthEventHandler; }
     }
 
 	void Update ()
@@ -43,5 +41,17 @@ public class TowerMiniController: MonoBehaviour
     {
         if (_fireBehaviour == null) { return; }
         _fireBehaviour.Fire(this.gameObject, MapObj.Direction, _bulletSpawner);
+    }
+
+    private void NoHealthEventHandler(object sender, EventArgs arg)
+    {
+        IDamageable dam = this.GetComponent<IDamageable>();
+        if (dam != null) {
+            dam.NoHealthEvent -= NoHealthEventHandler;
+            BTGame.Current.Stage.UnregisterMapObject(_mapObj);
+        }
+        if (this.gameObject != null) {
+            Destroy(this.gameObject);
+        }
     }
 }
