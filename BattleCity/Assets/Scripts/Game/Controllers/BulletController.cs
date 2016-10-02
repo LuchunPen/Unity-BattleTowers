@@ -29,7 +29,7 @@ public class BulletController: MonoBehaviour
     }
 
     private BehMove _moveBehaviour;
-    private MapObject _owner;
+    private GameObject _owner;
 
     void Awake()
     {
@@ -40,16 +40,16 @@ public class BulletController: MonoBehaviour
 	void Update ()
 	{
         if (_moveBehaviour != null) {
-            ObstacleType obst =  _moveBehaviour.Move();
+            ObstacleType obst =  _moveBehaviour.Move(this.transform, this.MapObj);
             if (obst != ObstacleType.None) {
                 SetDamage();
             }
         }
     }
 
-    public void SetOwner(MapObject mapObj)
+    public void SetOwner(GameObject owner)
     {
-        _owner = mapObj;
+        _owner = owner;
     }
 
     private void SetDamage()
@@ -57,8 +57,10 @@ public class BulletController: MonoBehaviour
         Collider2D[] cols = Physics2D.OverlapCircleAll(this.transform.position, 0.2f);
         if (cols != null) {
             for (int i = 0; i < cols.Length; i++) {
+                if (cols[i].gameObject == _owner) continue;
+
                 MapObject mo = cols[i].GetComponent<MapObject>();
-                if (mo != null && mo != _owner) {
+                if (mo != null) {
                     BTGame.Current.Stage.UnregisterMapObject(mo);
                 }
             }

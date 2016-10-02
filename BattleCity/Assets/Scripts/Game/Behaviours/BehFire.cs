@@ -6,7 +6,7 @@ Date: 01/10/2016 22:04
 using System;
 using UnityEngine;
 
-public abstract class BehFire: MonoBehaviour 
+public abstract class BehFire: MonoBehaviour
 {
     //public static readonly Uid64 UNIQ = "BE3E79ECD5E42A02";
 
@@ -29,5 +29,5 @@ public abstract class BehFire: MonoBehaviour
     protected float _fireCooldown;
     public float FireCoolown { get { return _fireCooldown; } }
 
-    public abstract void Fire(Dir4 direction);
+    public abstract void Fire(object sender, Dir4 direction, Transform bulletSpawn);
 }

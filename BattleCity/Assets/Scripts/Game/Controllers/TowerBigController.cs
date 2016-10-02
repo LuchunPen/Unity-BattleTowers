@@ -23,9 +23,12 @@ public class TowerBigController: MonoBehaviour
     private BehFire _fireBehaviour;
     private Transform _playerTarget;
 
+    private Transform _bulletSpawner;
+
     void Start () 
 	{
         GameObject targ = GameObject.FindGameObjectWithTag("Player");
+        _bulletSpawner = this.transform.FindChild("BulletSpawn");
         if (targ != null) {
             _playerTarget = targ.transform;
         }
@@ -55,7 +58,7 @@ public class TowerBigController: MonoBehaviour
                 else { MapObj.Direction = Dir4.Down; }
             }
 
-            _fireBehaviour.Fire(MapObj.Direction);
+            _fireBehaviour.Fire(this.gameObject, MapObj.Direction, _bulletSpawner);
         }
     }
 

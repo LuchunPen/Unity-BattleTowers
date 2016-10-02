@@ -21,11 +21,17 @@ public class TowerMiniController: MonoBehaviour
     }
 
     private BehFire _fireBehaviour;
+    private Transform _bulletSpawner;
 
     void Awake()
     {
         _mapObj = this.GetComponent<MapObject>();
         _fireBehaviour = this.GetComponent<BehFire>();
+    }
+
+    void Start()
+    {
+        _bulletSpawner = this.transform.FindChild("BulletSpawn");
     }
 
 	void Update ()
@@ -36,6 +42,6 @@ public class TowerMiniController: MonoBehaviour
     private void Fire()
     {
         if (_fireBehaviour == null) { return; }
-        _fireBehaviour.Fire(MapObj.Direction);
+        _fireBehaviour.Fire(this.gameObject, MapObj.Direction, _bulletSpawner);
     }
 }

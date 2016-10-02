@@ -4,7 +4,6 @@ Date: 30/09/2016 23:37
 */
 
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
