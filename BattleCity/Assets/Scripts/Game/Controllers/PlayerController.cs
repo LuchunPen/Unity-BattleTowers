@@ -31,7 +31,7 @@ public class PlayerController: MonoBehaviour, IModifiable<BehMove>, IModifiable<
 
     private Transform _bulletSpawner;
 
-    void Awake()
+    void Start()
     {
         if (_activeLevelObject == null) {
             _activeLevelObject = _levelObjects[0];

@@ -33,18 +33,25 @@ public class StageEditor : Editor
         }
     }
 
+    private static int sectorSize = 2;
+
     private Stage _target;
     private string _mapName;
     private Vector2 _mapSize;
     private bool _showNewMap;
 
-    private static MapObject _activeTile;
+    private static MapObject[] _activeTile;
     private static Vector2 _cursorPos;
+    private static int _rotateX1;
 
     private void OnEnable()
     {
         _target = (Stage)target;
         Tools.current = Tool.View;
+
+        if (_activeTile == null) {
+            _activeTile = new MapObject[4];
+        }
     }
 
     private void OnDisable()
@@ -64,8 +71,8 @@ public class StageEditor : Editor
     void OnSceneGUI()
     {
         if (_target == null) { return; }
-        if (_activeTile != null) {
-            Tools.current = Tool.View;
+        if (_activeTile == null) {
+            _activeTile = new MapObject[4];
         }
         EditMap();
         SceneView.RepaintAll();
@@ -123,14 +130,25 @@ public class StageEditor : Editor
     private void DrawScrollList()
     {
         if (Tiles == null) { return; }
-        EditorGUILayout.HelpBox("[Q] if tile active - [add tile], else [remove tile]", MessageType.Info);
+        EditorGUILayout.HelpBox("[Q] - add tile" + 
+            Environment.NewLine + "[R] - rotate tile" + 
+            Environment.NewLine + "[E] - remove tile", MessageType.Info);
         ScrollPosition = EditorGUILayout.BeginScrollView(ScrollPosition);
         int tileIndex = -1;
         tileIndex = GUILayout.SelectionGrid(tileIndex, GetGUIContentsFromTile(), TileRowLenght, ButtonGUIStyle);
         if (tileIndex != -1) {
             ClearActiveTile();
-            MapObject tile = Instantiate(Tiles[tileIndex]);
-            _activeTile = tile;
+            if (Tiles[tileIndex].MapSize == MapSize.x1) {
+                for (int i = 0; i < _activeTile.Length; i++) {
+                    MapObject tile = Instantiate(Tiles[tileIndex]);
+                    _activeTile[i] = tile;
+                }
+                _rotateX1 = 1;
+            }
+            else if (Tiles[tileIndex].MapSize == MapSize.x2) {
+                MapObject tile = Instantiate(Tiles[tileIndex]);
+                _activeTile[0] = tile;
+            }
         }
         EditorGUILayout.EndScrollView();
     }
@@ -175,57 +193,157 @@ public class StageEditor : Editor
     {
         Ray mapRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
         int tpX = Mathf.FloorToInt(mapRay.origin.x); int tpY = Mathf.FloorToInt(mapRay.origin.y);
-        if (_activeTile != null) {
-            tpX = Mathf.FloorToInt(mapRay.origin.x / (int)_activeTile.MapSize) * (int)_activeTile.MapSize;
-            tpY = Mathf.FloorToInt(mapRay.origin.y / (int)_activeTile.MapSize) * (int)_activeTile.MapSize;
-        }
+        tpX = Mathf.FloorToInt(mapRay.origin.x / sectorSize) * sectorSize;
+        tpY = Mathf.FloorToInt(mapRay.origin.y / sectorSize) * sectorSize;
         _cursorPos = new Vector2(tpX, tpY);
 
-        Event curr = Event.current;
-        if (_activeTile != null) {
-            float offset = (int)_activeTile.MapSize % 2 == 0 ? 1f : 0;
-            _activeTile.transform.position = new Vector3(tpX + offset, tpY + offset, 0);
+        Tools.current = Tool.View;
 
-            int size = (int)_activeTile.MapSize;
-            bool inMapBound = true;
-            for (int x = 0; x < size; x++) {
-                for (int y = 0; y < size; y++) {
-                    Vector3 tPos = new Vector3(tpX + x, tpY + y, 0);
-                    if (!_target.IsMapBounded(tPos)) {
-                        inMapBound = false;
-                        continue;
+        EditTileX1(tpX, tpY);
+        EditTileX2(tpX, tpY);
+        RemoveTile(tpX, tpY);
+    }
+
+    private void RemoveTile(int tpX, int tpY)
+    {
+        Event curr = Event.current;
+        if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.E) {
+            int sX = (tpX / 2) * 2;
+            int sY = (tpY / 2) * 2;
+            
+            for (int x = 0; x < 2; x++) {
+                for (int y = 0; y < 2; y++) {
+                    Vector3 tPos = new Vector3(sX + x, sY + y, 0);
+                    if (_target.IsMapBounded(tPos)) {
+                        MapObject mo = _target.Map[(int)tPos.x, (int)tPos.y].RegisterObject;
+                        if (mo != null) {
+                            _target.UnregisterMapObject(mo);
+                        }
                     }
                 }
-            }
-
-            if (!inMapBound) {
-                _activeTile.gameObject.SetActive(false);
-            }
-            else {
-                _activeTile.gameObject.SetActive(true);
-            }
-
-            if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q && inMapBound) {
-                bool reg = _target.CanPlaceMapObject(_activeTile);
-                if (reg) {
-                    _activeTile.transform.SetParent(_target.transform);
-                    MapObject newTile = Instantiate(_activeTile, _activeTile.transform.position, Quaternion.identity) as MapObject;
-                    newTile.gameObject.name = _activeTile.name;
-                    _activeTile = newTile;
-                }
-            }
-            else if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.R) {
-                _activeTile.Direction++;
             }
         }
-        else {
-            if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q) {
-                if (_target.IsMapBounded(tpX, tpY)) {
-                    MapObject mo = _target.Map[tpX, tpY].RegisterObject;
-                    if (mo!= null) {
-                        _target.UnregisterMapObject(mo);
+    }
+
+    private void EditTileX1(int tpX, int tpY)
+    {
+        if (_activeTile == null || _activeTile[0] == null) return;
+        if (_activeTile[0].MapSize != MapSize.x1) return;
+
+        Event curr = Event.current;
+       
+        for (int i = 0; i < _activeTile.Length; i++) {
+
+            if (_activeTile[i] == null) { continue; }
+
+            int x1 = (1 & i) == 1 ? (int)_activeTile[i].MapSize : 0;
+            int y1 = (1 & i >> 1) == 1 ? (int)_activeTile[i].MapSize : 0;
+
+            float offsetX = (int)_activeTile[i].MapSize % 2 == 0 ? 1f : 0.5f;
+            float offsetY = (int)_activeTile[i].MapSize % 2 == 0 ? 1f : 0.5f;
+
+            _activeTile[i].transform.position = new Vector3(tpX + offsetX + x1, tpY + offsetY + y1, 0);
+        }
+
+        int size = (int)_activeTile[0].MapSize;
+        bool inMapBound = true;
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
+                Vector3 tPos = new Vector3(tpX + x, tpY + y, 0);
+                if (!_target.IsMapBounded(tPos)) {
+                    inMapBound = false;
+                    continue;
+                }
+            }
+        }
+
+        for (int i = 0; i < _activeTile.Length; i++) {
+            if (_activeTile[i] == null) { continue; }
+            if (!inMapBound) {
+                _activeTile[i].gameObject.SetActive(false);
+            }
+            else {
+                if ((1 & _rotateX1 >> i) == 1) {
+                    _activeTile[i].gameObject.SetActive(true);
+                }
+            }
+        }
+
+        if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.R) {
+            _rotateX1 = (_rotateX1 + 1) % 16;
+            _rotateX1 = _rotateX1 == 0 ? 1 : _rotateX1;
+
+            for (int i = 0; i < _activeTile.Length; i++) {
+                if (_activeTile[i] == null) { continue; }
+                if ((1 & _rotateX1 >> i) == 1) {
+                    _activeTile[i].gameObject.SetActive(true);
+                }
+                else {
+                    _activeTile[i].gameObject.SetActive(false);
+                }
+            }
+        }
+
+        if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q && inMapBound) {
+            for (int i = 0; i < _activeTile.Length; i++) {
+                if (_activeTile[i] != null && _activeTile[i].gameObject.activeInHierarchy) {
+                    bool reg = _target.CanPlaceMapObject(_activeTile[i]);
+                    if (reg) {
+                        _activeTile[i].transform.SetParent(_target.transform);
+                        MapObject newTile = Instantiate(_activeTile[i], _activeTile[i].transform.position, Quaternion.identity) as MapObject;
+                        newTile.gameObject.name = _activeTile[i].name;
+                        _activeTile[i] = newTile;
                     }
                 }
+            }
+        }
+
+        if (curr.type == EventType.MouseDown && curr.button == 1) {
+            ClearActiveTile();
+        }
+    }
+
+    private void EditTileX2(int tpX, int tpY)
+    {
+        if (_activeTile == null || _activeTile[0] == null) return;
+        if (_activeTile[0].MapSize != MapSize.x2) return;
+        Event curr = Event.current;
+
+        float offsetX = (int)_activeTile[0].MapSize % 2 == 0 ? 1f : 0.5f;
+        float offsetY = (int)_activeTile[0].MapSize % 2 == 0 ? 1f : 0.5f;
+        _activeTile[0].transform.position = new Vector3(tpX + offsetX, tpY + offsetY, 0);
+        
+
+        int size = (int)_activeTile[0].MapSize;
+        bool inMapBound = true;
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
+                Vector3 tPos = new Vector3(tpX + x, tpY + y, 0);
+                if (!_target.IsMapBounded(tPos)) {
+                    inMapBound = false;
+                    continue;
+                }
+            }
+        }
+
+        if (!inMapBound) {
+            _activeTile[0].gameObject.SetActive(false);
+        }
+        else {
+            _activeTile[0].gameObject.SetActive(true);
+        }
+
+        if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.R) {
+            _activeTile[0].Direction++;
+        }
+
+        if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q && inMapBound) {
+            bool reg = _target.CanPlaceMapObject(_activeTile[0]);
+            if (reg) {
+                _activeTile[0].transform.SetParent(_target.transform);
+                MapObject newTile = Instantiate(_activeTile[0], _activeTile[0].transform.position, Quaternion.identity) as MapObject;
+                newTile.gameObject.name = _activeTile[0].name;
+                _activeTile[0] = newTile;
             }
         }
 
@@ -237,8 +355,11 @@ public class StageEditor : Editor
     private void ClearActiveTile()
     {
         if (_activeTile != null) {
-            DestroyImmediate(_activeTile.gameObject);
-            _activeTile = null;
+            for (int i = 0; i < _activeTile.Length; i++) {
+                if (_activeTile[i] == null) continue;
+
+                DestroyImmediate(_activeTile[i].gameObject);
+            }
         }
     }
 
@@ -247,18 +368,10 @@ public class StageEditor : Editor
     {
         if (targetObj == null || targetObj.Map == null || targetObj.Map.SizeX == 0 || targetObj.Map.SizeY == 0) { return; }
         Gizmos.matrix = targetObj.transform.localToWorldMatrix;
-
-        
-        if (_activeTile == null || _activeTile.MapSize == MapSize.x1) {
-            DrawMapFrame(targetObj.Map.SizeX, targetObj.Map.SizeY, 1f);
-            DrawMapGrid(targetObj.Map.SizeX, targetObj.Map.SizeY, 1f);
-            DrawGizmoBrush(1);
-        }
-        else {
-            DrawMapFrame(targetObj.Map.SizeX / 2, targetObj.Map.SizeY / 2, 2f);
-            DrawMapGrid(targetObj.Map.SizeX / 2, targetObj.Map.SizeY / 2, 2f);
-            DrawGizmoBrush(2);
-        }
+       
+        DrawMapFrame(targetObj.Map.SizeX / 2, targetObj.Map.SizeY / 2, 2f);
+        DrawMapGrid(targetObj.Map.SizeX / 2, targetObj.Map.SizeY / 2, 2f);
+        DrawGizmoBrush(2);
     }
 
     private static void DrawMapFrame(int x, int y, float size)

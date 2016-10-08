@@ -23,7 +23,7 @@ public class TowerMiniController: MonoBehaviour
     private BehFire _fireBehaviour;
     private Transform _bulletSpawner;
 
-    void Awake()
+    void Start()
     {
         _mapObj = this.GetComponent<MapObject>();
         _fireBehaviour = this.GetComponent<BehFire>();

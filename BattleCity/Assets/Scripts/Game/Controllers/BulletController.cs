@@ -38,7 +38,7 @@ public class BulletController : MonoBehaviour
     private BehMove _moveBehaviour;
     private GameObject _owner;
 
-    void Awake()
+    void Start()
     {
         _mapObj = this.GetComponent<MapObject>();
         _moveBehaviour = this.GetComponent<BehMove>();

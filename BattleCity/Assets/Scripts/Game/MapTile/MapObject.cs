@@ -32,8 +32,8 @@ public class MapObject: MonoBehaviour
     public virtual Rect Rect
     {
         get {
-            float xOff = this.transform.position.x - (int)MapSize / 2;
-            float yOff = this.transform.position.y - (int)MapSize / 2;
+            float xOff = this.transform.position.x - (float)MapSize / 2;
+            float yOff = this.transform.position.y - (float)MapSize / 2;
             return new Rect(xOff, yOff, (int)MapSize, (int)MapSize);
         }
     }
