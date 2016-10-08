@@ -17,6 +17,12 @@ public class MapObject: MonoBehaviour
     }
 
     [SerializeField]
+    private MapObjectRegisterType _mapObjectRegType;
+    public MapObjectRegisterType MOType {
+        get { return _mapObjectRegType; }
+    }
+
+    [SerializeField]
     protected MapSize _mapSize;
     public MapSize MapSize {
         get { return _mapSize; }

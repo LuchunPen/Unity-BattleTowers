@@ -11,6 +11,7 @@ public class PlayerController: MonoBehaviour, IModifiable<BehMove>, IModifiable<
     //public static readonly Uid64 UNIQ = "AE3E7F55B71BD202";
 
     public event EventHandler PlayerDestroyEvent;
+    [SerializeField] private GameObject Explosion;
 
     [SerializeField]
     private MapObject[] _levelObjects;
@@ -143,6 +144,9 @@ public class PlayerController: MonoBehaviour, IModifiable<BehMove>, IModifiable<
         if (dam != null) {
             dam.NoHealthEvent -= NoHealthEventHandler;
             BTGame.Current.Stage.UnregisterMapObject(_activeLevelObject);
+        }
+        if (Explosion != null) {
+            Instantiate(Explosion, this.transform.position, Quaternion.identity);
         }
         if (this.gameObject != null) {
             Destroy(this.gameObject);

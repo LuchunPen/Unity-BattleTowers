@@ -105,6 +105,16 @@ public class StageEditor : Editor
             map.MapName = _mapName;
             _target.Map = map;
         }
+        if (GUILayout.Button("Save to")) {
+            string path = EditorUtility.SaveFilePanel("Save map", "", _target.Map.MapName + ".bcm", "bcm");
+            SaveLoadBinary.Save(_target.Map, path);
+        }
+        if (GUILayout.Button("Load from")) {
+            string path = EditorUtility.OpenFilePanel("Load map", "", "bcm");
+            SectorMap sm = SaveLoadBinary.Load(path);
+            UnpackSectorMap(sm);
+        }
+
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
     }
@@ -287,7 +297,7 @@ public class StageEditor : Editor
         if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q && inMapBound) {
             for (int i = 0; i < _activeTile.Length; i++) {
                 if (_activeTile[i] != null && _activeTile[i].gameObject.activeInHierarchy) {
-                    bool reg = _target.CanPlaceMapObject(_activeTile[i]);
+                    bool reg = _target.RegisterMapObject(_activeTile[i]);
                     if (reg) {
                         _activeTile[i].transform.SetParent(_target.transform);
                         MapObject newTile = Instantiate(_activeTile[i], _activeTile[i].transform.position, Quaternion.identity) as MapObject;
@@ -338,7 +348,7 @@ public class StageEditor : Editor
         }
 
         if (curr.type == EventType.KeyDown && curr.keyCode == KeyCode.Q && inMapBound) {
-            bool reg = _target.CanPlaceMapObject(_activeTile[0]);
+            bool reg = _target.RegisterMapObject(_activeTile[0]);
             if (reg) {
                 _activeTile[0].transform.SetParent(_target.transform);
                 MapObject newTile = Instantiate(_activeTile[0], _activeTile[0].transform.position, Quaternion.identity) as MapObject;
@@ -419,5 +429,63 @@ public class StageEditor : Editor
             }
         }
         return assetList;
+    }
+
+    public void UnpackSectorMap(SectorMap sm)
+    {
+        if (sm == null) { return; }
+        if (Tiles == null) { InitializeTileList(true); }
+
+        Dictionary<MapObjectRegisterType, MapObject> cashTileList = new Dictionary<MapObjectRegisterType, MapObject>();
+        for (int i = 0; i < Tiles.Count; i++) {
+            if (Tiles[i].MOType != MapObjectRegisterType.None) {
+                if (!cashTileList.ContainsKey(Tiles[i].MOType)) {
+                    cashTileList.Add(Tiles[i].MOType, Tiles[i]);
+                }
+            }
+        }
+
+        _target.ClearMap();
+        ClearActiveTile();
+
+        StageMap map = new StageMap(sm.SizeX * 2,sm.SizeY * 2);
+        map.MapName = sm.MapName;
+        _target.Map = map;
+
+        for (int x = 0; x < sm.SizeX; x++) {
+            for (int y = 0; y < sm.SizeY; y++) {
+                if (sm[x, y].MOType == 0) { continue; }
+
+                MapObject mo = null;
+                cashTileList.TryGetValue((MapObjectRegisterType)sm[x, y].MOType, out mo);
+                if (mo == null) { continue; }
+
+                int tpX = x * 2;
+                int tpY = y * 2;
+                if (mo.MapSize == MapSize.x1) {
+                    int tileDir = sm[x, y].TileDirection;
+                    for (int i = 0; i < 4; i++) {
+                        if ((1 & tileDir >> i) == 0) { continue; }
+
+                        int x1 = (1 & i) == 1 ? 1 : 0;
+                        int y1 = (1 & i >> 1) == 1 ? 1 : 0;
+
+                        float offsetX = 0.5f; float offsetY = 0.5f;
+                        MapObject tile = Instantiate(mo, new Vector3(tpX + offsetX + x1, tpY + offsetY + y1, 0), Quaternion.identity) as MapObject;
+                        tile.transform.SetParent(_target.transform);
+                        tile.name = mo.name;
+                        _target.RegisterMapObject(tile);
+                    }
+                }
+                else if (mo.MapSize == MapSize.x2) {
+                    float offsetX = 1f; float offsetY = 1f;
+                    MapObject tile = Instantiate(mo, new Vector3(tpX + offsetX, tpY + offsetY, 0), Quaternion.identity) as MapObject;
+                    tile.transform.SetParent(_target.transform);
+                    tile.name = mo.name;
+                    tile.Direction = (Dir4)sm[x, y].TileDirection;
+                    _target.RegisterMapObject(tile);
+                }
+            }
+        }
     }
 }

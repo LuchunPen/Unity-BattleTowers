@@ -27,16 +27,6 @@ public class Stage: MonoBehaviour
     [SerializeField]
     private Transform FloorObject;
 
-	void Start () 
-	{
-	    
-	}
-	
-	void Update ()
-	{
-	    
-	}
-
     private void ChangeFloorSize()
     {
         if (_map == null) { return; }
@@ -58,7 +48,7 @@ public class Stage: MonoBehaviour
         return _map.GetMapIndex(px, py) != -1;
     }
 
-    public bool CanPlaceMapObject(MapObject mObj)
+    public bool RegisterMapObject(MapObject mObj)
     {
         if (mObj == null) { return false; }
         Rect r = mObj.Rect;

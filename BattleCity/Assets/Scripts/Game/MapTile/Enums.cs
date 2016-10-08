@@ -21,6 +21,17 @@ public enum ObstacleType
     GroundAndFlying = Ground | Flying,
 }
 
+public enum  MapObjectRegisterType
+{
+    None = 0,
+    PlayerSpawn = 1,
+    BrickWall = 2,
+    ConcreteWall = 3,
+    WaterWall = 4,
+    TowerMini = 5,
+    TowerBig = 6,
+}
+
 public enum MapSize
 {
     x1 = 1,

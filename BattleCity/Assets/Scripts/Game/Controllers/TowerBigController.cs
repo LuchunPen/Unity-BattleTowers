@@ -9,6 +9,8 @@ using UnityEngine;
 public class TowerBigController: MonoBehaviour 
 {
     //public static readonly Uid64 UNIQ = "BE3E92452FE8B102";
+    [SerializeField] private GameObject Explosion;
+
     private MapObject _mapObj;
     public MapObject MapObj
     {
@@ -84,6 +86,10 @@ public class TowerBigController: MonoBehaviour
             dam.NoHealthEvent -= NoHealthEventHandler;
             BTGame.Current.Stage.UnregisterMapObject(_mapObj);
         }
+        if (Explosion != null) {
+            Instantiate(Explosion, this.transform.position, Quaternion.identity);
+        }
+
         if (this.gameObject != null) {
             Destroy(this.gameObject);
         }

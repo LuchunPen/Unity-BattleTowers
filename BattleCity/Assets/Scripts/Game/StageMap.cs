@@ -53,4 +53,9 @@ public class StageMap
         if (x < 0 || y < 0 || x >= _sizeX || y >= _sizeY) { return -1; }
         return x * _sizeY + y;
     }
+
+    public override string ToString()
+    {
+        return MapName + ": " + SizeX + ", " + SizeY;
+    }
 }
