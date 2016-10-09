@@ -4,12 +4,19 @@ Date: 30/09/2016 23:37
 */
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
 public class Stage: MonoBehaviour
 {
     //public static readonly Uid64 UNIQ = "EE15B130F388F302";
+
+    public event EventHandler WinEvent;
+    public event EventHandler LoseEvent;
+
+    private List<MapObject> _enemies;
+    private PlayerSpawnerController _player;
 
     [SerializeField]
     private StageMap _map;
@@ -27,10 +34,54 @@ public class Stage: MonoBehaviour
     [SerializeField]
     private Transform FloorObject;
 
+    private void Start()
+    {
+        InitializeEnemies();
+        InitializePlayer();
+    }
+
+    // HARDCODE ================================
+    protected virtual void InitializeEnemies()
+    {
+        _enemies = new List<MapObject>();
+        for (int x = 0; x < Map.SizeX; x += 2) {
+            for (int y = 0; y < Map.SizeY; y += 2) {
+                MapObject mo = Map[x, y].RegisterObject;
+
+                if (mo == null) { continue; }
+                if (mo.MOType == MapObjectRegisterType.TowerBig || mo.MOType == MapObjectRegisterType.TowerMini) {
+                    _enemies.Add(mo);
+
+                }
+            }
+        }
+    }
+    protected virtual void InitializePlayer()
+    {
+        for (int x = 0; x < Map.SizeX; x += 2) {
+            for (int y = 0; y < Map.SizeY; y += 2) {
+                MapObject mo = Map[x, y].RegisterObject;
+                if (mo == null) { continue; }
+                else if (mo.MOType == MapObjectRegisterType.PlayerSpawn) {
+                    PlayerSpawnerController ps = mo.GetComponent<PlayerSpawnerController>();
+                    if (ps != null) {
+                        ps.PlayerDestoyEvent += PlayerDestroyEventHandler;
+                        _player = ps;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    // HARDCODE ================================
+
     private void ChangeFloorSize()
     {
         if (_map == null) { return; }
-        if (FloorObject == null) { FloorObject = this.transform.FindChild("Floor"); }
+        if (FloorObject == null) {
+            FloorObject = this.transform.FindChild("Floor");
+
+        }
         FloorObject.localScale = new Vector3(_map.SizeX, _map.SizeY);
     }
 
@@ -75,7 +126,7 @@ public class Stage: MonoBehaviour
         return true;
     }
 
-    public void UnregisterMapObject(MapObject mObj)
+    public virtual void UnregisterMapObject(MapObject mObj)
     {
         if (mObj == null) { return; }
         Rect r = mObj.Rect;
@@ -92,7 +143,35 @@ public class Stage: MonoBehaviour
         if (!Application.isPlaying) {
             DestroyImmediate(mObj.gameObject);
         }
-        else { Destroy(mObj.gameObject); }
+        else {
+            UnregisterEnemy(mObj);
+            Destroy(mObj.gameObject);
+        }
+    }
+
+    private void UnregisterEnemy(MapObject mObj)
+    {
+        bool en = _enemies.Remove(mObj);
+        if (en) {
+            if (_enemies.Count > 0) {
+                CreateBonus();
+            }
+            else {
+                WinTrigger();
+            }
+        }
+    }
+
+    private void CreateBonus()
+    {
+        int xRnd = UnityEngine.Random.Range(0, Map.SizeX / 2);
+        int yRnd = UnityEngine.Random.Range(0, Map.SizeY / 2);
+
+        BonusController bc = BTGame.Current.GetRandomBonus();
+        if(bc != null) {
+            BonusController bonus = Instantiate(bc, new Vector3(xRnd * 2 + 1, yRnd * 2 + 1, 0), Quaternion.identity) as BonusController;
+            bonus.transform.SetParent(this.transform);
+        }
     }
 
     public bool InMapBound(Rect r, Dir4 direction)
@@ -158,6 +237,20 @@ public class Stage: MonoBehaviour
                 }
             }
         }
+    }
+
+    private void WinTrigger()
+    {
+        EventHandler ev = WinEvent;
+        if (ev != null) { ev(this, null); }
+    }
+    private void PlayerDestroyEventHandler(object sender, EventArgs args)
+    {
+        if (_player != null) {
+            _player.PlayerDestoyEvent -= PlayerDestroyEventHandler;
+        }
+        EventHandler ev = LoseEvent;
+        if (ev != null) { ev(this, null); }
     }
 
     void OnDrawGizmos()

@@ -6,21 +6,31 @@ Date: 01/10/2016 22:09
 using System;
 using UnityEngine;
 
-public class BehMoveDirectXY: BehMove 
+public class BehMoveDirectXY: BehMove, IModifiable<BehMove>
 {
     //public static readonly Uid64 UNIQ = "BE3E7B010E036A02";
     private MapObject _lastCollision;
+    protected Modificator<BehMove> _mod;
 
     public override void ChangeDirection(MapObject mo, Dir4 newDirection)
     {
+        if (_mod != null && _mod.ModObject != null) {
+            _mod.ModObject.ChangeDirection(mo, newDirection);
+            return;
+        }
+
         if (newDirection != mo.Direction) {
             mo.Direction = newDirection;
-            _lastCollision = null;
         }
+        _lastCollision = null;
     }
 
     public override ObstacleType Move(Transform trans, MapObject mo)
     {
+        if (_mod != null && _mod.ModObject != null) {
+            return _mod.ModObject.Move(trans, mo);
+        }
+
         Vector3 curPos = trans.position;
         Vector3 direction = MapObjectUtils.GetDirection2D(mo.Direction);
         Vector3 nextPos = Vector3.MoveTowards(curPos, curPos + direction, _moveSpeed * Time.deltaTime);
@@ -44,6 +54,11 @@ public class BehMoveDirectXY: BehMove
         }
 
         return obst;
+    }
+
+    public void SetModificator(Modificator<BehMove> modificator)
+    {
+        _mod = modificator;
     }
 
     private void OnTriggerStay2D(Collider2D collider)

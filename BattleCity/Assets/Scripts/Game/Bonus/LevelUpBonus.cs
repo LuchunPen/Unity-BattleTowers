@@ -16,7 +16,7 @@ public class LevelUpBonus : BonusController
             ILevelUP lvl = collider.GetComponent<ILevelUP>();
             if (lvl != null) {
                 lvl.LevelUp();
-                _isActivate = true;
+                IsActivate = true;
             }
         }
     }

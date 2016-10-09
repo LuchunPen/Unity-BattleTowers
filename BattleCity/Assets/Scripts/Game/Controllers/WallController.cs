@@ -14,13 +14,13 @@ public class WallController: MonoBehaviour
 	void Start () 
 	{
         _mapObj = this.GetComponent<MapObject>();
-        IDamageable dam = this.GetComponent<IDamageable>();
+        BehDamage dam = this.GetComponent<BehDamage>();
         if (dam != null) { dam.NoHealthEvent += NoHealthEventHandler; }
     }
 
     private void NoHealthEventHandler(object sender, EventArgs arg)
     {
-        IDamageable dam = this.GetComponent<IDamageable>();
+        BehDamage dam = this.GetComponent<BehDamage>();
         if (dam != null) {
             dam.NoHealthEvent -= NoHealthEventHandler;
             BTGame.Current.Stage.UnregisterMapObject(_mapObj);

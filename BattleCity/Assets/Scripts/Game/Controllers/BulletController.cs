@@ -15,6 +15,7 @@ public class BulletController : MonoBehaviour
     public Damage Damage
     {
         get { return _damage; }
+        set { _damage = value; }
     }
 
     [SerializeField]
@@ -22,6 +23,7 @@ public class BulletController : MonoBehaviour
     public float DamageRadius
     {
         get { return _damageRadius; }
+        set { _damageRadius = value; }
     }
 
     private MapObject _mapObj;
@@ -36,13 +38,15 @@ public class BulletController : MonoBehaviour
     }
 
     private BehMove _moveBehaviour;
+    [SerializeField]
     private GameObject _owner;
 
     void Start()
     {
         _mapObj = this.GetComponent<MapObject>();
         _moveBehaviour = this.GetComponent<BehMove>();
-        IDamageable dam = this.GetComponent<IDamageable>();
+        this.transform.SetParent(BTGame.Current.Stage.transform);
+        BehDamage dam = this.GetComponent<BehDamage>();
         if (dam != null) { dam.NoHealthEvent += NoHealthEventHandler; }
     }
 
@@ -66,8 +70,10 @@ public class BulletController : MonoBehaviour
         Collider2D[] cols = Physics2D.OverlapCircleAll(this.transform.position, DamageRadius);
         if (cols != null) {
             for (int i = 0; i < cols.Length; i++) {
-                if (cols[i].gameObject == _owner) continue;
-                IDamageable dam = cols[i].GetComponent<IDamageable>();
+                if (cols[i].gameObject == _owner || cols[i].gameObject == this.gameObject) {
+                    continue;
+                }
+                BehDamage dam = cols[i].GetComponent<BehDamage>();
                 if (dam != null) {
                     dam.SetDamage(_damage);
                 }
@@ -78,18 +84,12 @@ public class BulletController : MonoBehaviour
 
     private void OnDestroy()
     {
-        Destroy(this.gameObject);
+        _owner = null;
+        BTGame.Current.BulletPool.AddItem(this);
     }
 
     private void NoHealthEventHandler(object sender, EventArgs arg)
     {
-        IDamageable dam = this.GetComponent<IDamageable>();
-        if (dam != null) {
-            dam.NoHealthEvent -= NoHealthEventHandler;
-            BTGame.Current.Stage.UnregisterMapObject(_mapObj);
-        }
-        if (this.gameObject != null) {
-            Destroy(this.gameObject);
-        }
+        OnDestroy();
     }
 }

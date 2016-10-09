@@ -16,12 +16,3 @@ public struct Damage
     public DamageType DType;
     public int Value;
 }
-
-public interface IDamageable
-{
-    event EventHandler NoHealthEvent;
-    DamageType IncomingDamageType { get; }
-    int Health { get; }
-
-    void SetDamage(Damage damage);
-}

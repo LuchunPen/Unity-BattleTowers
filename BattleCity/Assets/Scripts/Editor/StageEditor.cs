@@ -97,19 +97,20 @@ public class StageEditor : Editor
             );
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Create new")) {
+        if (GUILayout.Button("Resize")) {
             if (_target.Map != null) {
                 _target.ClearMap();
             }
             StageMap map = new StageMap((int)_mapSize.x * 2, (int)_mapSize.y * 2);
             map.MapName = _mapName;
             _target.Map = map;
+            _target.name = "Stage_" + _target.Map.MapName;
         }
-        if (GUILayout.Button("Save to")) {
+        if (GUILayout.Button("Save binary")) {
             string path = EditorUtility.SaveFilePanel("Save map", "", _target.Map.MapName + ".bcm", "bcm");
             SaveLoadBinary.Save(_target.Map, path);
         }
-        if (GUILayout.Button("Load from")) {
+        if (GUILayout.Button("Load binary")) {
             string path = EditorUtility.OpenFilePanel("Load map", "", "bcm");
             SectorMap sm = SaveLoadBinary.Load(path);
             UnpackSectorMap(sm);
@@ -451,6 +452,7 @@ public class StageEditor : Editor
         StageMap map = new StageMap(sm.SizeX * 2,sm.SizeY * 2);
         map.MapName = sm.MapName;
         _target.Map = map;
+        _target.name = "Stage_" +map.MapName;
 
         for (int x = 0; x < sm.SizeX; x++) {
             for (int y = 0; y < sm.SizeY; y++) {

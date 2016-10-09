@@ -9,7 +9,7 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider2D))]
 public abstract class BonusController: MonoBehaviour 
 {
-    //public static readonly Uid64 UNIQ = "FE3F27403FC7E202";
+    //public static readonly Uid64 UNIQ = "FE3F27403FC7E202";    
     [SerializeField]
     private float _timeToDestroy;
     public float TimeToDestroy
@@ -24,13 +24,27 @@ public abstract class BonusController: MonoBehaviour
         get { return _activeTime; }
     }
 
+    [SerializeField]
     private float _timeExpected;
-    protected bool _isActivate;
+    private bool _isActivate;
+    public bool IsActivate {
+        get { return _isActivate; }
+        protected set {
+            _isActivate = value;
+            _timeExpected = 0;
+        }
+    }
 
 	protected virtual void Update ()
 	{
         _timeExpected += Time.deltaTime;
         if (!_isActivate) {
+            if (_timeExpected == 0) { return; }
+            float t = _timeExpected / _timeToDestroy;
+            if (t > 0.6f) {
+                float s = 1 - t + 0.6f;
+                this.transform.localScale = new Vector3(s, s, s);
+            }
             if (_timeExpected >= _timeToDestroy) {
                 Destroy(this.gameObject);
             }
@@ -39,7 +53,6 @@ public abstract class BonusController: MonoBehaviour
             if(_timeExpected >= _activeTime) {
                 Destroy(this.gameObject);
             }
-            
         }
 	}
 }

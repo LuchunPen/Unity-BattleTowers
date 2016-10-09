@@ -64,15 +64,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Game\BTGame.cs" />
+    <Compile Include="Assets\Scripts\Game\Behaviours\BehBulletDamage.cs" />
     <Compile Include="Assets\Scripts\Game\Behaviours\BehDamage.cs" />
     <Compile Include="Assets\Scripts\Game\Behaviours\BehFire.cs" />
     <Compile Include="Assets\Scripts\Game\Behaviours\BehFireDirectXY.cs" />
     <Compile Include="Assets\Scripts\Game\Behaviours\BehMove.cs" />
     <Compile Include="Assets\Scripts\Game\Behaviours\BehMoveDirectXY.cs" />
+    <Compile Include="Assets\Scripts\Game\Behaviours\NoDamage.cs" />
+    <Compile Include="Assets\Scripts\Game\Behaviours\NoFire.cs" />
+    <Compile Include="Assets\Scripts\Game\Behaviours\NoMove.cs" />
     <Compile Include="Assets\Scripts\Game\Bonus\BonusController.cs" />
+    <Compile Include="Assets\Scripts\Game\Bonus\DefenceBonus.cs" />
     <Compile Include="Assets\Scripts\Game\Bonus\LevelUpBonus.cs" />
     <Compile Include="Assets\Scripts\Game\Bonus\StopEnemyBonus.cs" />
     <Compile Include="Assets\Scripts\Game\Controllers\BulletController.cs" />
+    <Compile Include="Assets\Scripts\Game\Controllers\BulletPool.cs" />
     <Compile Include="Assets\Scripts\Game\Controllers\Damage.cs" />
     <Compile Include="Assets\Scripts\Game\Controllers\ExplosionController.cs" />
     <Compile Include="Assets\Scripts\Game\Controllers\IModifiableT.cs" />
@@ -81,14 +87,14 @@
     <Compile Include="Assets\Scripts\Game\Controllers\TowerBigController.cs" />
     <Compile Include="Assets\Scripts\Game\Controllers\TowerMiniController.cs" />
     <Compile Include="Assets\Scripts\Game\Controllers\WallController.cs" />
-    <Compile Include="Assets\Scripts\Game\MapCell.cs" />
-    <Compile Include="Assets\Scripts\Game\MapTile\Bullet.cs" />
     <Compile Include="Assets\Scripts\Game\MapTile\Enums.cs" />
     <Compile Include="Assets\Scripts\Game\MapTile\MapObject.cs" />
     <Compile Include="Assets\Scripts\Game\MapTile\MapObjectUtils.cs" />
     <Compile Include="Assets\Scripts\Game\PlayerKeys.cs" />
-    <Compile Include="Assets\Scripts\Game\Stage.cs" />
-    <Compile Include="Assets\Scripts\Game\StageMap.cs" />
+    <Compile Include="Assets\Scripts\Game\Stage\MapCell.cs" />
+    <Compile Include="Assets\Scripts\Game\Stage\Stage.cs" />
+    <Compile Include="Assets\Scripts\Game\Stage\StageMap.cs" />
+    <Compile Include="Assets\Scripts\Game\UI\Informer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>

@@ -15,4 +15,5 @@ public static class PlayerKeys
     public static KeyCode MoveDown = KeyCode.S;
 
     public static KeyCode Fire = KeyCode.Space;
+    public static KeyCode Pause = KeyCode.Escape;
 }
